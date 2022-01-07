@@ -43,8 +43,9 @@ run_commands () {
     do
       # Validating the command is in the path
       # Skipping command if not in path
-      [ $(command -v ${command/\s.*//} )  ] && echo "Running \"${command/\s+.*//}\" at $(get_utc_date)" || continue
+      [ $(command -v ${command/\s.*//} )  ] && echo "Running \"$command\" $(get_utc_date)" || continue
       $command
+      echo
     done
 }
 
@@ -52,10 +53,10 @@ get_logs (){
   # Create log directory if it does not exist in current working directory
   [ -d ./logs ] || mkdir -p ./logs
 
+  # iterate through the results
   for dir in $(find / -type f -name "*.log*" 2> /dev/null)
     do
-      echo $dir
-      cp $dir ./logs/${dir//\/\w+\/\w+/}
+      cat $dir | grep "command"
     done
 }
 
