@@ -38,20 +38,24 @@ get_utc_date () {
 }
 
 run_commands () {
-for full_command in "${COMMANDS[@]}"
-  do
-#    Validating the command is in the path
-    command=${full_command/\s.*//}
-    [ $(command -v $command )  ] || continue
-#    Running the command on the host
-    echo "Running $full_command at $(get_utc_date)"
-    $full_command
-  done
+  # Looping through array of commands
+  for command in "${COMMANDS[@]}"
+    do
+      # Validating the command is in the path
+      # Skipping command if not in path
+      [ $(command -v ${command/\s.*//} )  ] && echo "Running \"${command/\s+.*//}\" at $(get_utc_date)" || continue
+      $command
+    done
+}
+
+get_logs (){
+  LOG_DIRS=$(find /  -type f -name "*.log*")
+  for dir in "${LOG_DIRS[@]}"
+    do
+      echo $dir
+    done
 }
 
 
-main () {
-  run_commands
-}
-
-main
+# Start running program::
+run_commands
