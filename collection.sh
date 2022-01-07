@@ -49,15 +49,17 @@ run_commands () {
 }
 
 get_logs (){
+  # Create log directory if it does not exist in current working directory
+  [ -d ./logs ] || mkdir -p ./logs
+
   for dir in $(find / -type f -name "*.log*" 2> /dev/null)
     do
       echo $dir
-      [ -d ./logs ] || mkdir -p ./logs
-
+      cp $dir ./logs/${dir//\/\w+\/\w+/}
     done
 }
 
 
 # Start running program::
-#run_commands
+run_commands
 get_logs
