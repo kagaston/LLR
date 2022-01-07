@@ -19,11 +19,6 @@ if_in_path_run (){
   return 0
 }
 
-# TODO add back to list after test:: they slow the script
-#          'netstat -tulpn'
-#          'ss -tulpn'
-#          'lsof -Pni'
-#          'netstat -rn'
 COMMANDS=('uname -pmnsr'            # This will collect the initial system information
           'ps -AaCcEefjlMmrSTvwx'   # This will collect the running processes
           'kextstat'                # This will collect loaded modules
@@ -35,6 +30,10 @@ COMMANDS=('uname -pmnsr'            # This will collect the initial system infor
           'lastb'
           'ifconfig -a'
           'route'
+          'netstat -tulpn'
+          'ss -tulpn'
+          'lsof -Pni'
+          'netstat -rn'
 )
 
 
