@@ -49,14 +49,15 @@ run_commands () {
 }
 
 get_logs (){
-  LOG_DIRS=$(find / -type f -name "*.log*")
-  for dir in "${LOG_DIRS[@]}"
+  for dir in $(find / -type f -name "*.log*" 2> /dev/null)
     do
       echo $dir
+      [ -d ./logs ] || mkdir -p ./logs
+
     done
 }
 
 
 # Start running program::
-run_commands
+#run_commands
 get_logs
