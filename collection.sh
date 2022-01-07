@@ -12,12 +12,7 @@
 # TODO collect & hash all executable files
 # TODO make loop to gather proc data
 
-if_in_path_run (){
-  local arg=$1
-  # shellcheck disable=SC2046
-  [ $(command -v "$arg") ] || continue
-  return 0
-}
+[ "$EUID" == 0 ] || echo "For full functionality this script needs to be run as root"
 
 COMMANDS=('uname -pmnsr'            # This will collect the initial system information
           'ps -AaCcEefjlMmrSTvwx'   # This will collect the running processes
@@ -43,13 +38,14 @@ get_utc_date () {
 }
 
 run_commands () {
-for command in "${COMMANDS[@]}"
+for full_command in "${COMMANDS[@]}"
   do
 #    Validating the command is in the path
-    [ $(command -v ${command/\s.*//} )  ] || continue
+    command=${full_command/\s.*//}
+    [ $(command -v $command )  ] || continue
 #    Running the command on the host
-    echo "Running $command at $(get_utc_date)"
-    $command
+    echo "Running $full_command at $(get_utc_date)"
+    $full_command
   done
 }
 
