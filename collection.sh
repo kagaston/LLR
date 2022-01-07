@@ -59,3 +59,4 @@ get_logs (){
 
 # Start running program::
 run_commands
+get_logs
