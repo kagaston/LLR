@@ -49,7 +49,7 @@ run_commands () {
 }
 
 get_logs (){
-  LOG_DIRS=$(find /  -type f -name "*.log*")
+  LOG_DIRS=$(find / -type f -name "*.log*")
   for dir in "${LOG_DIRS[@]}"
     do
       echo $dir
