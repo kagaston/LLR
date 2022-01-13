@@ -12,7 +12,13 @@
 # TODO collect & hash all executable files
 # TODO make loop to gather proc data
 
-[ "$EUID" == 0 ] || echo "For full functionality this script needs to be run as root"
+if [ -z "$1" ]
+then
+  echo "Usage: $0 <arg>" >&2
+  exit 1
+fi
+
+[ "$EUID" == "0" ] || echo "For full functionality this script needs to be run as root"
 
 COMMANDS=('uname -pmnsr'            # This will collect the initial system information
           'ps -AaCcEefjlMmrSTvwx'   # This will collect the running processes
@@ -43,8 +49,13 @@ run_commands () {
     do
       # Validating the command is in the path
       # Skipping command if not in path
-      [ $(command -v ${command/\s.*//} )  ] && echo "Running \"$command\" $(get_utc_date)" || continue
-      $command
+      if location=`which ${command%% *} 2>/dev/null`
+      then
+	echo "$(get_utc_date) Running $command"
+        $command
+      else
+	echo "Could not locate ${command%% *}"
+      fi
       echo
     done
 }
@@ -63,6 +74,6 @@ get_logs (){
 
 # Start running program::
 run_commands
-get_logs
+### get_logs
 
 
