@@ -13,46 +13,52 @@
 
 LOG_PATH="data/"
 EVIDENCE_PATH="_findings"
-### Setup Functions
 
-create_directory () {
-  if [[ $# -eq 1 ]]; then
-      local LOCAL_PATH=$1
-      [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
-  else
-    echo "This function takes 1 positional argument(s)"
-  fi
-}
 
 ### SHARED FUNCTIONS:
 
-# This is used to print error to screen for script usage validation
 # TODO update usage section
 usage () {
+  # This is used to print error to screen for script usage validation
   echo "This $0 script needs to be run as the root user, the current user is $(whoami), exiting script"
 #  exit 1
 }
 
-# This sets the date command in a function to pull UTC timestamp
 get_utc_date () {
+  # This sets the date command in a function to pull UTC timestamp
   DATE_UTC=$(TZ=":UTC" date)
   echo "$DATE_UTC"
 }
 
-# This runs a if exist "0"  run else "1" continue to the next action
+create_directory () {
+  # This function creates the directory if it does not already exist
+  if [[ $# -eq 1 ]]
+    then
+      local LOCAL_PATH=$1
+      [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
+    else
+      echo "This function takes 1 positional argument(s)"
+  fi
+}
+
 command_exists_run () {
+  # This runs a if exist "0"  run else "1" continue to the next action
   local COMMAND=$1
   [ $(command -v $COMMAND ) ]
 }
 
-# This function will create a JSON error message, if the command is not found in the current path
-# this function must take in a variable at runtime
 log_command_error_message () {
-  local COMMAND=$1
-  local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
-  local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
-  create_directory $LOG_PATH
-  echo $CONTEXT >> $LOG_PATH/error.log
+  # This function will create a JSON error message, if the command is not found in the current path
+  if [[ $# -eq 1 ]]
+    then
+      local COMMAND=$1
+      local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
+      local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
+      create_directory $LOG_PATH
+      echo $CONTEXT >> $LOG_PATH/error.log
+    else
+      echo "This function takes 1 positional argument"
+  fi
 }
 
 # This function brings in error checking and checks that the command is in the path
@@ -77,7 +83,8 @@ run_cmd () {
 # TODO update filename to contain timestamp and system name
 get_system_info () {
   # This function is used to gather key information on the system
-  if [[ $# -eq 0 ]]; then
+  if [[ $# -eq 0 ]]
+    then
       local COMMAND='uname -snrmp'
       local TYPE="config"
       CONTEXT=$(run_cmd $COMMAND)
@@ -115,13 +122,14 @@ get_file_system_information () {
 
 get_running_process_information () {
   # This function collects data on the running processes
-  if [[ $# -eq 0 ]]; then
-    local COMMAND='ps aux'
-    local TYPE="state"
-    CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
-                              "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
-    create_directory "$EVIDENCE_PATH/$TYPE"
-    echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/running_process.json"
+  if [[ $# -eq 0 ]]
+    then
+      local COMMAND='ps aux'
+      local TYPE="state"
+      CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
+                                "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+      create_directory "$EVIDENCE_PATH/$TYPE"
+      echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/running_process.json"
     else
       echo "This function takes 0 positional argument(s)"
   fi
