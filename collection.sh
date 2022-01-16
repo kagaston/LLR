@@ -13,16 +13,6 @@
 
 LOG_PATH="data/"
 EVIDENCE_PATH="_findings"
-### Setup Functions
-
-create_directory () {
-  if [[ $# -eq 1 ]]; then
-      local LOCAL_PATH=$1
-      [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
-  else
-    echo "This function takes 1 positional argument(s)"
-  fi
-}
 
 ### SHARED FUNCTIONS:
 
@@ -37,6 +27,15 @@ usage () {
 get_utc_date () {
   DATE_UTC=$(TZ=":UTC" date)
   echo "$DATE_UTC"
+}
+
+create_directory () {
+  if [[ $# -eq 1 ]]; then
+      local LOCAL_PATH=$1
+      [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
+  else
+    echo "This function takes 1 positional argument(s)"
+  fi
 }
 
 # This runs a if exist "0"  run else "1" continue to the next action
