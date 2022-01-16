@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-# TODO add functionality for usage if [[ $? == 0 ]]; then
+# TODO add functionality for usage if [[ $? == 0 ]]; see `help test`
 # TODO add older check and creation
 # TODO add function to create timestamp for file
 # TODO add function to create file each command with unique file name
-# TODO create array wth commands
 # TODO create find command to blob all log files on the host
 # TODO separate log files by compressed uncompressed
 # TODO collect etc config files
@@ -12,57 +11,151 @@
 # TODO collect & hash all executable files
 # TODO make loop to gather proc data
 
-[ "$EUID" == 0 ] || echo "For full functionality this script needs to be run as root"
+LOG_PATH="data/"
+EVIDENCE_PATH="_findings"
+### Setup Functions
 
-COMMANDS=('uname -pmnsr'            # This will collect the initial system information
-          'ps -AaCcEefjlMmrSTvwx'   # This will collect the running processes
-          'kextstat'                # This will collect loaded modules
-          'lsmod'
-          'df'
-          'mount'
-          'w'
-          'last'
-          'lastb'
-          'ifconfig -a'
-          'route'
-          'netstat -tulpn'
-          'ss -tulpn'
-          'lsof -Pni'
-          'netstat -rn'
-)
+create_directory () {
+  if [[ $# -eq 1 ]]; then
+      local LOCAL_PATH=$1
+      [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
+  else
+    echo "This function takes 1 positional argument(s)"
+  fi
+}
 
+### SHARED FUNCTIONS:
 
+# This is used to print error to screen for script usage validation
+# TODO update usage section
+usage () {
+  echo "This $0 script needs to be run as the root user, the current user is $(whoami), exiting script"
+#  exit 1
+}
+
+# This sets the date command in a function to pull UTC timestamp
 get_utc_date () {
   DATE_UTC=$(TZ=":UTC" date)
   echo "$DATE_UTC"
 }
 
-run_commands () {
-  # Looping through array of commands
-  for command in "${COMMANDS[@]}"
-    do
-      # Validating the command is in the path
-      # Skipping command if not in path
-      [ $(command -v ${command/\s.*//} )  ] && echo "Running \"$command\" $(get_utc_date)" || continue
-      $command
-      echo
-    done
+# This runs a if exist "0"  run else "1" continue to the next action
+command_exists_run () {
+  local COMMAND=$1
+  [ $(command -v $COMMAND ) ]
 }
 
-get_logs (){
-  # Create log directory if it does not exist in current working directory
-  [ -d ./logs ] || mkdir -p ./logs
+# This function will create a JSON error message, if the command is not found in the current path
+# this function must take in a variable at runtime
+log_command_error_message () {
+  local COMMAND=$1
+  local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
+  local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
+  create_directory $LOG_PATH
+  echo $CONTEXT >> $LOG_PATH/error.log
+}
 
-  # iterate through the results
-  for dir in $(find / -type f -name "*.log*" 2> /dev/null)
-    do
-      cat $dir | grep "command"
-    done
+# This function brings in error checking and checks that the command is in the path
+# TODO review logging functionality
+run_cmd () {
+  # Performing command validation to ensure the command is in the path
+  # TODO Make function and extract for a DRY approach
+  local COMMAND=$1
+  local FLAGS=$2
+  if command_exists_run $COMMAND
+    then
+      local FULL_COMMAND="$COMMAND $FLAGS"
+      $FULL_COMMAND 2>/dev/null
+    else
+      log_command_error_message $COMMAND
+  fi
+  }
+
+
+### SYSTEM CONFIGURATIONS:
+
+# TODO update filename to contain timestamp and system name
+get_system_info () {
+  # This function is used to gather key information on the system
+  if [[ $# -eq 0 ]]; then
+      local COMMAND='uname -snrmp'
+      local TYPE="config"
+      CONTEXT=$(run_cmd $COMMAND)
+      CONTEXT=$(echo $CONTEXT | awk '{ print "{\"kernel\": \"" $1 "\",\"node\": \"" $2 "\",\"release\": \"" $3\
+                                    "\",\"architecture\": \"" $4 "\",\"processor\": \"" $5 "\"}"}')
+      create_directory "$EVIDENCE_PATH/$TYPE"
+      echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/system_info.json"
+    else
+      echo "This function takes 0 positional argument(s)"
+  fi
+  }
+
+# Gets network configurations
+# TODO finish function and map to JSON object
+get_network_information () {
+#'ifconfig -a'
+#'route'
+#'netstat -rn'
+  pass
 }
 
 
-# Start running program::
-run_commands
-get_logs
+# Files system information
+# TODO finish function and map to JSON object
+get_file_system_information () {
+#'df'
+#'mount'
+  pass
+}
 
+### SYSTEM STATE INFORMATION:
+
+# Running processes
+# TODO update filename to contain timestamp and system name
+
+get_running_process_information () {
+  # This function collects data on the running processes
+  if [[ $# -eq 0 ]]; then
+    local COMMAND='ps aux'
+    local TYPE="state"
+    CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
+                              "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+    create_directory "$EVIDENCE_PATH/$TYPE"
+    echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/running_process.json"
+    else
+      echo "This function takes 0 positional argument(s)"
+  fi
+  }
+
+# Open ports
+# TODO finish function and map to JSON object
+get_open_port_information () {
+#  'netstat -tulpn'
+#  'ss -tulpn'
+#  'lsof -Pni'
+  pass
+}
+
+# User context
+# TODO finish function and map to JSON object
+get_user_information () {
+#  'w'
+#  'last'
+#  'lastb'
+  pass
+}
+
+# Gets teh loaded kernel modules
+# TODO finish function and map to JSON object
+get_loaded_modules () {
+#'kextstat'                # This will collect loaded modules
+#lsmod
+  pass
+}
+
+# Validates the script is run as the root user
+[ "$EUID" == 0 ] || usage
+
+get_system_info
+get_running_process_information
 
