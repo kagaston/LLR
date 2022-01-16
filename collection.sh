@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 
 # TODO add functionality for usage if [[ $? == 0 ]]; see `help test`
-# TODO add older check and creation
-# TODO add function to create timestamp for file
-# TODO add function to create file each command with unique file name
 # TODO create find command to blob all log files on the host
 # TODO separate log files by compressed uncompressed
+# TODO collect var log files
 # TODO collect etc config files
 # TODO collect history files for root and all other users
 # TODO collect & hash all executable files
 # TODO make loop to gather proc data
 
-LOG_PATH="data/"
 EVIDENCE_PATH="_findings"
-
+LOG_PATH="data/"
+HOSTNAME=$(hostname)
+FILE_TIMESTAMP=$(TZ=":UTC" date +"%Y%m%d")
 
 ### SHARED FUNCTIONS:
 
@@ -61,7 +60,6 @@ log_command_error_message () {
   fi
 }
 
-# This function brings in error checking and checks that the command is in the path
 # TODO review logging functionality
 run_cmd () {
   # Performing command validation to ensure the command is in the path
@@ -80,25 +78,38 @@ run_cmd () {
 
 ### SYSTEM CONFIGURATIONS:
 
-# TODO update filename to contain timestamp and system name
+save_json () {
+  # This function takes in 2 arguments to create a unique file path/name
+  if [[ $# -eq 2 ]]
+    then
+      local SELF=$1
+      local TYPE=$2
+      create_directory "$EVIDENCE_PATH/$TYPE"
+      echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/$SELF$FILE_TIMESTAMP.json"
+  else
+    echo "This function takes 2 positional argument(s)"
+  fi
+}
+
 get_system_info () {
   # This function is used to gather key information on the system
   if [[ $# -eq 0 ]]
     then
       local COMMAND='uname -snrmp'
       local TYPE="config"
+      local SELF="system_info_"
       CONTEXT=$(run_cmd $COMMAND)
       CONTEXT=$(echo $CONTEXT | awk '{ print "{\"kernel\": \"" $1 "\",\"node\": \"" $2 "\",\"release\": \"" $3\
                                     "\",\"architecture\": \"" $4 "\",\"processor\": \"" $5 "\"}"}')
-      create_directory "$EVIDENCE_PATH/$TYPE"
-      echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/system_info.json"
+      echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
       echo "This function takes 0 positional argument(s)"
   fi
   }
 
-# Gets network configurations
-# TODO finish function and map to JSON object
+# TODO Create function
+# TODO Map output to JSON object
+# TODO Export JSON to file
 get_network_information () {
 #'ifconfig -a'
 #'route'
@@ -107,8 +118,9 @@ get_network_information () {
 }
 
 
-# Files system information
-# TODO finish function and map to JSON object
+# TODO Create function
+# TODO Map output to JSON object
+# TODO Export JSON to file
 get_file_system_information () {
 #'df'
 #'mount'
@@ -117,35 +129,35 @@ get_file_system_information () {
 
 ### SYSTEM STATE INFORMATION:
 
-# Running processes
-# TODO update filename to contain timestamp and system name
-
 get_running_process_information () {
   # This function collects data on the running processes
   if [[ $# -eq 0 ]]
     then
       local COMMAND='ps aux'
       local TYPE="state"
+      local SELF="running_processes_"
       CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
                                 "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
-      create_directory "$EVIDENCE_PATH/$TYPE"
-      echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/running_process.json"
+      echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
       echo "This function takes 0 positional argument(s)"
   fi
   }
 
-# Open ports
-# TODO finish function and map to JSON object
+# TODO Create function
+# TODO Map output to JSON object
+# TODO Export JSON to file
 get_open_port_information () {
+#  This function collects the open port information on the host
 #  'netstat -tulpn'
 #  'ss -tulpn'
 #  'lsof -Pni'
   pass
 }
 
-# User context
-# TODO finish function and map to JSON object
+# TODO Create function
+# TODO Map output to JSON object
+# TODO Export JSON to file
 get_user_information () {
 #  'w'
 #  'last'
@@ -153,8 +165,9 @@ get_user_information () {
   pass
 }
 
-# Gets teh loaded kernel modules
-# TODO finish function and map to JSON object
+# TODO Create function
+# TODO Map output to JSON object
+# TODO Export JSON to file
 get_loaded_modules () {
 #'kextstat'                # This will collect loaded modules
 #lsmod
