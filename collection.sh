@@ -137,7 +137,7 @@ get_running_process_information () {
       local TYPE="state"
       local SELF="running_processes_"
       CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
-                                "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+                                         "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
       echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
       echo "This function takes 0 positional argument(s)"
@@ -159,9 +159,9 @@ get_open_port_information () {
 # TODO Map output to JSON object
 # TODO Export JSON to file
 get_user_information () {
-#  'w'
-#  'last'
-#  'lastb'
+  # 'w'
+  # 'last'
+  # 'lastb'
   pass
 }
 
@@ -169,8 +169,8 @@ get_user_information () {
 # TODO Map output to JSON object
 # TODO Export JSON to file
 get_loaded_modules () {
-#'kextstat'                # This will collect loaded modules
-#lsmod
+# 'kextstat'                # This will collect loaded modules
+# lsmod
   pass
 }
 
