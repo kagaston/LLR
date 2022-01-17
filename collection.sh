@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO add functionality for usage if [[ $? == 0 ]]; see `help test`
 # TODO create find command to blob all log files on the host
 # TODO separate log files by compressed uncompressed
 # TODO collect var log files
@@ -9,12 +8,14 @@
 # TODO collect & hash all executable files
 # TODO make loop to gather proc data
 
+# Setting global variables
 EVIDENCE_PATH="_findings"
 LOG_PATH="data/"
 HOSTNAME=$(hostname)
 FILE_TIMESTAMP=$(TZ=":UTC" date +"%Y%m%d")
 
 ### SHARED FUNCTIONS:
+
 
 # TODO update usage section
 usage () {
@@ -23,89 +24,118 @@ usage () {
 #  exit 1
 }
 
+
 get_utc_date () {
-  # This sets the date command in a function to pull UTC timestamp
-  DATE_UTC=$(TZ=":UTC" date)
+  # This function sets the date command in a function to pull UTC timestamp
+  # Setting local variables
+  local DATE_UTC=$(TZ=":UTC" date)
+
   echo "$DATE_UTC"
 }
+
 
 create_directory () {
   # This function creates the directory if it does not already exist
   if [[ $# -eq 1 ]]
     then
+      # Setting local variables
       local LOCAL_PATH=$1
+
       [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
+
     else
       echo "This function takes 1 positional argument(s)"
   fi
 }
 
+
 command_exists_run () {
   # This runs a if exist "0"  run else "1" continue to the next action
+  # Setting local variables
   local COMMAND=$1
+
   [ $(command -v $COMMAND ) ]
 }
+
 
 log_command_error_message () {
   # This function will create a JSON error message, if the command is not found in the current path
   if [[ $# -eq 1 ]]
     then
+      # Setting local variables
       local COMMAND=$1
       local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
       local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
+
       create_directory $LOG_PATH
+
       echo $CONTEXT >> $LOG_PATH/error.log
+
     else
       echo "This function takes 1 positional argument"
   fi
 }
 
+
 # TODO review logging functionality
+# TODO Make function and extract for a DRY approach
 run_cmd () {
   # Performing command validation to ensure the command is in the path
-  # TODO Make function and extract for a DRY approach
+  # Setting local variables
   local COMMAND=$1
   local FLAGS=$2
+
   if command_exists_run $COMMAND
     then
       local FULL_COMMAND="$COMMAND $FLAGS"
+
       $FULL_COMMAND 2>/dev/null
+
     else
       log_command_error_message $COMMAND
   fi
   }
 
 
-### SYSTEM CONFIGURATIONS:
-
 save_json () {
   # This function takes in 2 arguments to create a unique file path/name
   if [[ $# -eq 2 ]]
     then
+      # Setting local variables
       local SELF=$1
       local TYPE=$2
+
       create_directory "$EVIDENCE_PATH/$TYPE"
+
       echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/$SELF$FILE_TIMESTAMP.json"
+
   else
     echo "This function takes 2 positional argument(s)"
   fi
 }
 
+
 get_system_info () {
-  # This function is used to gather key information on the system
+  # This function is used to gather key information on the system leveraging the "uname" command
   if [[ $# -eq 0 ]]
     then
+      # Setting local variables
       local COMMAND='uname -snrmp'
       local TYPE="config"
       local SELF="system_info_"
+
       CONTEXT=$(run_cmd $COMMAND)
+
       CONTEXT=$(echo $CONTEXT | awk '{ print "{\"kernel\": \"" $1 "\",\"node\": \"" $2 "\",\"release\": \"" $3\
                                     "\",\"architecture\": \"" $4 "\",\"processor\": \"" $5 "\"}"}')
+
       echo "[$CONTEXT]" | save_json $SELF $TYPE
+
     else
       echo "This function takes 0 positional argument(s)"
   fi
   }
+
 
 # TODO Create function
 # TODO Map output to JSON object
@@ -127,12 +157,12 @@ get_file_system_information () {
   pass
 }
 
-### SYSTEM STATE INFORMATION:
 
 get_running_process_information () {
-  # This function collects data on the running processes
+  # This function is used to collects the running processes using the "ps" command
   if [[ $# -eq 0 ]]
     then
+      # Setting local variables
       local COMMAND='ps aux'
       local TYPE="state"
       local SELF="running_processes_"
@@ -146,6 +176,7 @@ get_running_process_information () {
   fi
   }
 
+
 # TODO Create function
 # TODO Map output to JSON object
 # TODO Export JSON to file
@@ -157,18 +188,18 @@ get_open_port_information () {
   pass
 }
 
+
 # TODO Create function
 # TODO Map output to JSON object
 # TODO Export JSON to file
 # TODO Create additional functionality that will leverage the "last" and "lastb" and save to same output file
 # TODO dedup input from multiple commands
 get_user_information () {
-  # This command pulls logon information for users
-  # 'last'
-  # 'lastb'
+# This function is used to collect the current activity on the system using the "w" command
   if [[ $# -eq 0 ]]
     then
-      local COMMAND='w -h'
+      # Setting local variables
+      local COMMAND='w -hi'
       local TYPE="state"
       local SELF="user_information_"
 
@@ -181,19 +212,60 @@ get_user_information () {
   fi
 }
 
-# TODO Create function
-# TODO Map output to JSON object
-# TODO Export JSON to file
+
 get_loaded_modules () {
-# 'kextstat'                # This will collect loaded modules
-# lsmod
-  pass
+  # This function collects loaded kernel modules
+  # lsmod could also be leveraged if the JSON output is updated
+
+  if [[ $# -eq 0 ]]
+    then
+      # Setting local variables
+      local COMMAND='kextstat -akl'
+      local TYPE="state"
+      local SELF="kernel_modules_"
+
+      CONTEXT=$(run_cmd $COMMAND  | awk '{ print "{\"index\": \"" $1  "\",\"refs\": \"" $2 "\",\"address\": \""  $3\
+                                          "\",\"size\": \"" $4 "\",\"wired\": \"" $5 "\",\"architecture\": \"" $6\
+                                           "\",\"name\": \"" $7 "\"}"}')
+
+      echo "[$CONTEXT]" | save_json $SELF $TYPE
+
+    else
+      echo "This function takes 0 positional argument(s)"
+  fi
 }
 
-# Validates the script is run as the root user
-[ "$EUID" == 0 ] || usage
 
-get_system_info
-get_running_process_information
-get_user_information
+main () {
+  # This function test to see if the script is run as the root user or superuser \"[ "$EUID" == 0 ] || usage\"
+  # then if the test passes the functions are executed else a usage statement is presented to the user
 
+  if [ "$EUID" == 0 ]
+    then
+
+      # This function is used to gather key information on the system leveraging the "uname" command
+      echo "Gathering system information with \"uname -snrmp\""
+      get_system_info
+
+      # This function is used to collects the running processes using the "ps" command
+      echo "Gathering system information with \"ps -aux\""
+      get_running_process_information
+
+      # This function is used to collect the current activity on the system using the "w" command
+      echo "Gathering system information with \"w -hi\""
+      get_user_information
+
+      # This function is used to collect the loaded kernel modules using the "kextstat" command
+      echo "Gathering system information with \"kextstat -akl\""
+      get_loaded_modules
+
+    else
+
+      # This function prints a usage statment to screen when the validation test fails
+      usage
+  fi
+
+}
+
+# This is the start of the program, this function executes the above commands
+main
