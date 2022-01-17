@@ -34,6 +34,7 @@ create_directory () {
   if [[ $# -eq 1 ]]
     then
       local LOCAL_PATH=$1
+
       [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
     else
       echo "This function takes 1 positional argument(s)"
@@ -43,6 +44,7 @@ create_directory () {
 command_exists_run () {
   # This runs a if exist "0"  run else "1" continue to the next action
   local COMMAND=$1
+
   [ $(command -v $COMMAND ) ]
 }
 
@@ -53,6 +55,7 @@ log_command_error_message () {
       local COMMAND=$1
       local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
       local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
+
       create_directory $LOG_PATH
       echo $CONTEXT >> $LOG_PATH/error.log
     else
@@ -69,6 +72,7 @@ run_cmd () {
   if command_exists_run $COMMAND
     then
       local FULL_COMMAND="$COMMAND $FLAGS"
+
       $FULL_COMMAND 2>/dev/null
     else
       log_command_error_message $COMMAND
@@ -84,7 +88,9 @@ save_json () {
     then
       local SELF=$1
       local TYPE=$2
+
       create_directory "$EVIDENCE_PATH/$TYPE"
+
       echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/$SELF$FILE_TIMESTAMP.json"
   else
     echo "This function takes 2 positional argument(s)"
@@ -98,7 +104,9 @@ get_system_info () {
       local COMMAND='uname -snrmp'
       local TYPE="config"
       local SELF="system_info_"
+
       CONTEXT=$(run_cmd $COMMAND)
+
       CONTEXT=$(echo $CONTEXT | awk '{ print "{\"kernel\": \"" $1 "\",\"node\": \"" $2 "\",\"release\": \"" $3\
                                     "\",\"architecture\": \"" $4 "\",\"processor\": \"" $5 "\"}"}')
       echo "[$CONTEXT]" | save_json $SELF $TYPE
@@ -136,8 +144,10 @@ get_running_process_information () {
       local COMMAND='ps aux'
       local TYPE="state"
       local SELF="running_processes_"
+
       CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
-                                "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+                                         "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+
       echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
       echo "This function takes 0 positional argument(s)"
@@ -158,19 +168,33 @@ get_open_port_information () {
 # TODO Create function
 # TODO Map output to JSON object
 # TODO Export JSON to file
+# TODO Create additional functionality that will leverage the "last" and "lastb" and save to same output file
+# TODO dedup input from multiple commands
 get_user_information () {
-#  'w'
-#  'last'
-#  'lastb'
-  pass
+  # This command pulls logon information for users
+  # 'last'
+  # 'lastb'
+  if [[ $# -eq 0 ]]
+    then
+      local COMMAND='w -h'
+      local TYPE="state"
+      local SELF="user_information_"
+
+      CONTEXT=$(run_cmd $COMMAND  | awk '{ print "{\"guid\": \"" $1  "\",\"tty\": \"" $2\
+                                        "\",\"from\": \""  $3 "\",\"login\": \"" $4 "\"},"}')
+
+      echo "[$CONTEXT]" | save_json $SELF $TYPE
+    else
+      echo "This function takes 0 positional argument(s)"
+  fi
 }
 
 # TODO Create function
 # TODO Map output to JSON object
 # TODO Export JSON to file
 get_loaded_modules () {
-#'kextstat'                # This will collect loaded modules
-#lsmod
+# 'kextstat'                # This will collect loaded modules
+# lsmod
   pass
 }
 
@@ -179,4 +203,5 @@ get_loaded_modules () {
 
 get_system_info
 get_running_process_information
+get_user_information
 
