@@ -17,6 +17,7 @@ FILE_TIMESTAMP=$(TZ=":UTC" date +"%Y%m%d")
 
 usage () {
   # This is used to print error to screen for script usage validation
+
   echo "This $0 script needs to be run as the root user, the current user is $(whoami), exiting script"
   exit 1
 }
@@ -49,6 +50,7 @@ time_it () {
 
 get_utc_date () {
   # This function sets the date command in a function to pull UTC timestamp
+
   # Setting local variables
   local DATE_UTC=$(TZ=":UTC" date)
 
@@ -58,6 +60,7 @@ get_utc_date () {
 
 create_directory () {
   # This function creates the directory if it does not already exist
+
   if [[ $# -eq 1 ]]
     then
       # Setting local variables
@@ -74,6 +77,7 @@ create_directory () {
 
 command_exists_run () {
   # This function validates the command is in the path and runs the command if it exist
+
   if [[ $# -gt 0 ]]
     then
       # Setting local variables
@@ -90,6 +94,7 @@ command_exists_run () {
 
 log_command_error_message () {
   # This function will create a JSON error message, if the command is not found in the current path
+
   if [[ $# -eq 1 ]]
     then
       # Setting local variables
@@ -112,6 +117,7 @@ log_command_error_message () {
 # TODO Make function and extract for a DRY approach
 run_cmd () {
   # Performing command validation to ensure the command is in the path
+
   # Setting local variables
   local COMMAND=$1
   local FLAGS=$2
@@ -133,6 +139,7 @@ run_cmd () {
 
 save_json () {
   # This function takes in 2 arguments to create a unique file path/name
+
   if [[ $# -eq 2 ]]
     then
       # Setting local variables
@@ -152,6 +159,7 @@ save_json () {
 
 get_system_info () {
   # This function is used to gather key information on the system leveraging the "uname" command
+
   if [[ $# -eq 0 ]]
     then
       # Setting local variables
@@ -195,6 +203,7 @@ get_file_system_information () {
 
 get_running_process_information () {
   # This function is used to collects the running processes using the "ps" command
+
   if [[ $# -eq 0 ]]
     then
       # Setting local variables
@@ -220,6 +229,7 @@ get_open_port_information () {
 #  'netstat -tulpn'
 #  'ss -tulpn'
 #  'lsof -Pni'
+# lsof field names: COMMAND     PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
   pass
 }
 
@@ -231,6 +241,7 @@ get_open_port_information () {
 # TODO dedup input from multiple commands
 get_user_information () {
 # This function is used to collect the current activity on the system using the "w" command
+
   if [[ $# -eq 0 ]]
     then
       # Setting local variables
@@ -296,7 +307,7 @@ main () {
 
     else
 
-      # This function prints a usage statment to screen when the validation test fails
+      # This function prints a usage statement to screen when the validation test fails
       usage
   fi
 }
