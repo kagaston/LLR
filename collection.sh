@@ -22,6 +22,31 @@ usage () {
 }
 
 
+time_it () {
+  # This wrapper function calculates the time a function takes to run and prints to screen
+  # Setting local variables
+  if [[ $# -eq 1 ]]
+    then
+      # Setting local variables
+      local FUNCTION=$1
+
+      # Grabbing start time
+      START_TIME=$(date +%s)
+        $FUNCTION
+      # Grabbing end time
+      END_TIME=$(date +%s)
+
+      # Calculating time to run
+      RUNTIME=$((END_TIME - START_TIME))
+
+      echo "The script completed in $RUNTIME"
+
+    else
+      echo "This function takes 1 positional argument(s) $# were provided"
+  fi
+}
+
+
 get_utc_date () {
   # This function sets the date command in a function to pull UTC timestamp
   # Setting local variables
@@ -274,8 +299,7 @@ main () {
       # This function prints a usage statment to screen when the validation test fails
       usage
   fi
-
 }
 
 # This is the start of the program, this function executes the above commands
-main
+time_it main
