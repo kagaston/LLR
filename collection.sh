@@ -14,14 +14,11 @@ LOG_PATH="data/"
 HOSTNAME=$(hostname)
 FILE_TIMESTAMP=$(TZ=":UTC" date +"%Y%m%d")
 
-### SHARED FUNCTIONS:
 
-
-# TODO update usage section
 usage () {
   # This is used to print error to screen for script usage validation
   echo "This $0 script needs to be run as the root user, the current user is $(whoami), exiting script"
-#  exit 1
+  exit 1
 }
 
 
@@ -41,20 +38,28 @@ create_directory () {
       # Setting local variables
       local LOCAL_PATH=$1
 
+      # Uses "-d" directory test to check for file path
       [[ -d $LOCAL_PATH ]] || mkdir -p $LOCAL_PATH
 
     else
-      echo "This function takes 1 positional argument(s)"
+      echo "This function takes 1 positional argument(s) $# were provided"
   fi
 }
 
 
 command_exists_run () {
-  # This runs a if exist "0"  run else "1" continue to the next action
-  # Setting local variables
-  local COMMAND=$1
+  # This function validates the command is in the path and runs the command if it exist
+  if [[ $# -gt 0 ]]
+    then
+      # Setting local variables
+      local COMMAND=$1
 
-  [ $(command -v $COMMAND ) ]
+      # Uses the command to validate if the command is in the running shell's process PATH
+      [ $(command -v $COMMAND ) ]
+
+    else
+      echo "This function takes 1 positional argument(s) $# were provided"
+  fi
 }
 
 
@@ -67,12 +72,13 @@ log_command_error_message () {
       local MESSAGE="Failed to run $COMMAND, the command was not found in the path"
       local CONTEXT="{\"Timestamp\": \"$(get_utc_date)\", \"Command\": \"$COMMAND\", \"Message\": \"$MESSAGE\"}"
 
+      # This function creates the directory if it does not already exist
       create_directory $LOG_PATH
 
       echo $CONTEXT >> $LOG_PATH/error.log
 
     else
-      echo "This function takes 1 positional argument"
+      echo "This function takes 1 positional argument(s) $# were provided"
   fi
 }
 
@@ -85,13 +91,16 @@ run_cmd () {
   local COMMAND=$1
   local FLAGS=$2
 
+  # This function validates the command is in the path and runs the command if it exist
   if command_exists_run $COMMAND
     then
+      # Setting local variables
       local FULL_COMMAND="$COMMAND $FLAGS"
 
       $FULL_COMMAND 2>/dev/null
 
     else
+      # This function will create a JSON error message, if the command is not found in the current path
       log_command_error_message $COMMAND
   fi
   }
@@ -105,12 +114,13 @@ save_json () {
       local SELF=$1
       local TYPE=$2
 
+      # This function creates the directory if it does not already exist
       create_directory "$EVIDENCE_PATH/$TYPE"
 
       echo "[$CONTEXT]" | tee "$EVIDENCE_PATH/$TYPE/$SELF$FILE_TIMESTAMP.json"
 
   else
-    echo "This function takes 2 positional argument(s)"
+    echo "This function takes 2 positional argument(s) $# were provided"
   fi
 }
 
@@ -132,7 +142,7 @@ get_system_info () {
       echo "[$CONTEXT]" | save_json $SELF $TYPE
 
     else
-      echo "This function takes 0 positional argument(s)"
+      echo "This function takes 0 positional argument(s) $# were provided"
   fi
   }
 
@@ -172,7 +182,7 @@ get_running_process_information () {
 
       echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
-      echo "This function takes 0 positional argument(s)"
+      echo "This function takes 0 positional argument(s) $# were provided"
   fi
   }
 
@@ -208,7 +218,7 @@ get_user_information () {
 
       echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
-      echo "This function takes 0 positional argument(s)"
+      echo "This function takes 0 positional argument(s) $# were provided"
   fi
 }
 
@@ -231,7 +241,7 @@ get_loaded_modules () {
       echo "[$CONTEXT]" | save_json $SELF $TYPE
 
     else
-      echo "This function takes 0 positional argument(s)"
+      echo "This function takes 0 positional argument(s) $# were provided"
   fi
 }
 
