@@ -136,8 +136,10 @@ get_running_process_information () {
       local COMMAND='ps aux'
       local TYPE="state"
       local SELF="running_processes_"
+
       CONTEXT=$(run_cmd $COMMAND | awk '{ if ( NR > 1  ) { print "{\"guid\": \"" $1  "\",\"pid\": \"" $2\
                                          "\",\"time\": \""  $9 "\",\"command\": \"" $11 "\"},"}}')
+
       echo "[$CONTEXT]" | save_json $SELF $TYPE
     else
       echo "This function takes 0 positional argument(s)"
@@ -158,11 +160,25 @@ get_open_port_information () {
 # TODO Create function
 # TODO Map output to JSON object
 # TODO Export JSON to file
+# TODO Create additional functionality that will leverage the "last" and "lastb" and save to same output file
+# TODO dedup input from multiple commands
 get_user_information () {
-  # 'w'
+  # This command pulls logon information for users
   # 'last'
   # 'lastb'
-  pass
+  if [[ $# -eq 0 ]]
+    then
+      local COMMAND='w -h'
+      local TYPE="state"
+      local SELF="user_information_"
+
+      CONTEXT=$(run_cmd $COMMAND  | awk '{ print "{\"guid\": \"" $1  "\",\"tty\": \"" $2\
+                                        "\",\"from\": \""  $3 "\",\"login\": \"" $4 "\"},"}')
+
+      echo "[$CONTEXT]" | save_json $SELF $TYPE
+    else
+      echo "This function takes 0 positional argument(s)"
+  fi
 }
 
 # TODO Create function
@@ -179,4 +195,5 @@ get_loaded_modules () {
 
 get_system_info
 get_running_process_information
+get_user_information
 
