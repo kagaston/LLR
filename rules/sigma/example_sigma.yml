@@ -1,0 +1,102 @@
+title: Suspicious PowerShell Encoded Command
+status: stable
+level: high
+description: Detects PowerShell execution with encoded commands, commonly used for obfuscation
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        CommandLine|contains:
+            - "-enc"
+            - "-encodedcommand"
+            - "-EncodedCommand"
+            - "bypass"
+            - "-nop"
+            - "hidden"
+        Image|endswith:
+            - "\\powershell.exe"
+            - "\\pwsh.exe"
+    condition: selection
+tags:
+    - attack.execution
+    - attack.t1059.001
+---
+title: Certutil Download
+status: stable
+level: high
+description: Detects certutil being used to download files from the internet
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        CommandLine|contains:
+            - "certutil"
+            - "-urlcache"
+            - "-split"
+            - "http"
+    condition: selection
+tags:
+    - attack.defense_evasion
+    - attack.t1218
+    - attack.t1105
+---
+title: Suspicious WMIC Execution
+status: stable
+level: medium
+description: Detects WMIC being used for reconnaissance or lateral movement
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        CommandLine|contains:
+            - "wmic"
+            - "process call create"
+    condition: selection
+tags:
+    - attack.execution
+    - attack.t1047
+---
+title: Suspicious Cron Job Creation
+status: stable
+level: medium
+description: Detects creation of cron jobs that may indicate persistence
+logsource:
+    category: process_creation
+    product: linux
+detection:
+    selection:
+        CommandLine|contains:
+            - "crontab"
+            - "/etc/cron"
+    filter:
+        CommandLine|contains:
+            - "crontab -l"
+    condition: selection and not filter
+tags:
+    - attack.persistence
+    - attack.t1053.003
+---
+title: Curl or Wget to Suspicious Location
+status: stable
+level: medium
+description: Detects curl or wget downloading to temp directories
+logsource:
+    category: process_creation
+    product: linux
+detection:
+    selection_tool:
+        CommandLine|contains:
+            - "curl"
+            - "wget"
+    selection_path:
+        CommandLine|contains:
+            - "/tmp/"
+            - "/dev/shm/"
+            - "/var/tmp/"
+    condition: selection_tool and selection_path
+tags:
+    - attack.command_and_control
+    - attack.t1105

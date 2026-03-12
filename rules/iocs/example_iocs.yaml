@@ -1,0 +1,81 @@
+iocs:
+  # --- Known malicious hashes ---
+  - type: hash_sha256
+    value: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    description: "Empty file hash — often used as a test indicator"
+    severity: low
+    mitre_technique: "T1027"
+    mitre_name: "Obfuscated Files or Information"
+
+  - type: hash_md5
+    value: "d41d8cd98f00b204e9800998ecf8427e"
+    description: "Empty file MD5 — test indicator"
+    severity: low
+
+  # --- Suspicious IPs ---
+  - type: ip
+    value: "185.220.101.1"
+    description: "Known Tor exit node"
+    severity: high
+    mitre_technique: "T1071"
+    mitre_name: "Application Layer Protocol"
+
+  - type: ip
+    value: "23.129.64.0"
+    description: "Known anonymization service"
+    severity: medium
+    mitre_technique: "T1090"
+    mitre_name: "Proxy"
+
+  # --- Suspicious domains ---
+  - type: domain
+    value: "evil.example.com"
+    description: "Example C2 domain"
+    severity: critical
+    mitre_technique: "T1071.001"
+    mitre_name: "Web Protocols"
+
+  - type: domain
+    value: "malware-download.example.org"
+    description: "Example malware distribution domain"
+    severity: high
+    mitre_technique: "T1105"
+    mitre_name: "Ingress Tool Transfer"
+
+  # --- Suspicious file paths ---
+  - type: filepath
+    value: "C:\\Users\\Public\\payload.exe"
+    description: "Known dropper location"
+    severity: critical
+    mitre_technique: "T1204.002"
+    mitre_name: "Malicious File"
+
+  - type: filepath
+    value: "/tmp/.hidden_backdoor"
+    description: "Hidden backdoor in temp directory"
+    severity: critical
+    mitre_technique: "T1059.004"
+    mitre_name: "Unix Shell"
+
+  # --- Suspicious process names ---
+  - type: process_name
+    value: "mimikatz.exe"
+    description: "Credential dumping tool"
+    severity: critical
+    mitre_technique: "T1003"
+    mitre_name: "OS Credential Dumping"
+
+  - type: process_name
+    value: "lazagne.exe"
+    description: "Password recovery tool"
+    severity: high
+    mitre_technique: "T1555"
+    mitre_name: "Credentials from Password Stores"
+
+  # --- Registry keys ---
+  - type: registry_key
+    value: "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\Backdoor"
+    description: "Suspicious autorun registry key"
+    severity: high
+    mitre_technique: "T1547.001"
+    mitre_name: "Registry Run Keys / Startup Folder"
