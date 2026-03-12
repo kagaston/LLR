@@ -1,4 +1,4 @@
-# IntrusionInspector (Bash Edition)
+# LR: Live Reesponse (Bash Edition)
 
 [![Bash 3.2+](https://img.shields.io/badge/bash-3.2+-4eaa25?style=for-the-badge&logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
