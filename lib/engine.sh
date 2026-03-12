@@ -309,9 +309,18 @@ engine_collect() {
 
     run_collectors "$output_dir"
 
-    # Seal evidence: hash all files and record end timestamp
+    # Count total artifacts across all collector outputs for the COC record
+    local total_artifacts=0
+    for rf in "${output_dir}/raw"/*.json; do
+        [[ -f "$rf" ]] || continue
+        local ac
+        ac="$(grep -o '"artifact_count": [0-9]*' "$rf" 2>/dev/null | head -1 | sed 's/.*: //')"
+        total_artifacts=$(( total_artifacts + ${ac:-0} ))
+    done
+
+    # Seal evidence: hash all files, then record end timestamp + manifest hash
     generate_manifest "$output_dir"
-    finalize_chain_of_custody "$output_dir"
+    finalize_chain_of_custody "$output_dir" "$total_artifacts"
 
     local global_end
     global_end="$(epoch_now)"
@@ -429,9 +438,18 @@ engine_triage() {
     run_analyzers "$output_dir" "$iocs_path" "$sigma_path" "$yara_path"
     run_reporters "$output_dir" "$formats"
 
-    # Seal evidence after all phases complete
+    # Count total artifacts across all collector outputs for the COC record
+    local total_artifacts=0
+    for rf in "${output_dir}/raw"/*.json; do
+        [[ -f "$rf" ]] || continue
+        local ac
+        ac="$(grep -o '"artifact_count": [0-9]*' "$rf" 2>/dev/null | head -1 | sed 's/.*: //')"
+        total_artifacts=$(( total_artifacts + ${ac:-0} ))
+    done
+
+    # Seal evidence after all phases complete — manifest first, then COC
     generate_manifest "$output_dir"
-    finalize_chain_of_custody "$output_dir"
+    finalize_chain_of_custody "$output_dir" "$total_artifacts"
 
     # Optionally package everything into a password-encrypted ZIP
     if [[ "$secure" == "true" ]]; then

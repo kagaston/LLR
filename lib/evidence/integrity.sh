@@ -83,6 +83,12 @@ generate_manifest() {
     json_write "$manifest_file" "$manifest"
     audit_log "manifest_generated" "SHA-256 manifest for ${#entries[@]} files"
     log_success "Manifest: ${#entries[@]} files hashed"
+
+    # Store manifest metadata in global variables for chain_of_custody to pick up.
+    # The manifest hash lets the COC record independently verify that the manifest
+    # itself hasn't been altered after signing.
+    MANIFEST_FILE_COUNT="${#entries[@]}"
+    MANIFEST_SHA256="$(compute_sha256 "$manifest_file")"
 }
 
 # -----------------------------------------------------------------------------
