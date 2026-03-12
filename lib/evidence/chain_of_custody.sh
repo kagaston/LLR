@@ -40,6 +40,11 @@
 # Set by init_chain_of_custody and reused by finalize_chain_of_custody.
 _COC_FILE=""
 
+# These globals are set by generate_manifest() in integrity.sh so that
+# finalize_chain_of_custody can embed them in the final COC record.
+MANIFEST_SHA256="${MANIFEST_SHA256:-}"
+MANIFEST_FILE_COUNT="${MANIFEST_FILE_COUNT:-0}"
+
 # -----------------------------------------------------------------------------
 # init_chain_of_custody — Create the chain of custody record
 #
@@ -78,38 +83,58 @@ init_chain_of_custody() {
 }
 
 # -----------------------------------------------------------------------------
-# finalize_chain_of_custody — Stamp the collection end time
+# finalize_chain_of_custody — Stamp end time, embed manifest hash and counts
 #
 # Parameters:
-#   $1  output_dir — Root output directory (used to locate the file if
-#                    _COC_FILE wasn't set, e.g., in standalone analyze runs)
+#   $1  output_dir      — Root output directory (used to locate the file if
+#                          _COC_FILE wasn't set, e.g., in standalone analyze runs)
+#   $2  total_artifacts  — (optional) Total artifact count across all collectors
 #
-# Updates the collection_end field in chain_of_custody.json to the current
-# UTC timestamp. Uses jq for clean JSON mutation when available; falls back
-# to bash string substitution (safe because the initial value is always an
-# empty string literal written by init_chain_of_custody).
+# Updates the chain_of_custody.json with:
+#   - collection_end     — UTC timestamp when collection finished
+#   - manifest_sha256    — SHA-256 hash of the manifest.json file itself
+#   - total_artifacts    — Sum of artifacts across all collectors
+#   - total_files        — Number of evidence files recorded in the manifest
+#
+# Uses jq for clean JSON mutation when available; falls back to rebuilding
+# the JSON from scratch when jq is not installed.
 # -----------------------------------------------------------------------------
 finalize_chain_of_custody() {
     local output_dir="$1"
+    local total_artifacts="${2:-0}"
 
-    # Handle the case where finalize is called without a prior init
     [[ -z "$_COC_FILE" ]] && _COC_FILE="${output_dir}/chain_of_custody.json"
     [[ -f "$_COC_FILE" ]] || return 0
+
+    local end_ts
+    end_ts="$(utc_now)"
 
     local content
     content="$(cat "$_COC_FILE")"
 
-    # Patch collection_end from "" to the current UTC timestamp
     if has_cmd jq; then
-        echo "$content" | jq --arg ts "$(utc_now)" '.collection_end = $ts' > "$_COC_FILE" 2>/dev/null
+        echo "$content" | jq \
+            --arg ts "$end_ts" \
+            --arg mhash "${MANIFEST_SHA256:-}" \
+            --argjson ta "${total_artifacts:-0}" \
+            --argjson tf "${MANIFEST_FILE_COUNT:-0}" \
+            '.collection_end = $ts | .manifest_sha256 = $mhash | .total_artifacts = $ta | .total_files = $tf' \
+            > "$_COC_FILE" 2>/dev/null
     else
-        # Bash string replacement — relies on the known empty-string pattern
-        # written by init_chain_of_custody above
-        local end_ts
-        end_ts="$(utc_now)"
+        # Patch collection_end via string replacement
         content="${content/\"collection_end\": \"\"/\"collection_end\": \"${end_ts}\"}"
+
+        # Inject new fields before the closing brace. This is safe because
+        # init_chain_of_custody writes well-formed JSON with a final "}" on its own line.
+        local extra=""
+        extra+="\"manifest_sha256\": \"${MANIFEST_SHA256:-}\","
+        extra+="\"total_artifacts\": ${total_artifacts:-0},"
+        extra+="\"total_files\": ${MANIFEST_FILE_COUNT:-0}"
+
+        # Replace the last "}" with extra fields + "}"
+        content="${content%\}*}${extra}}"
         printf '%s\n' "$content" > "$_COC_FILE"
     fi
 
-    audit_log "chain_of_custody" "Finalized at $(utc_now)"
+    audit_log "chain_of_custody" "Finalized: manifest_sha256=${MANIFEST_SHA256:-none}, artifacts=${total_artifacts}, files=${MANIFEST_FILE_COUNT:-0}"
 }
